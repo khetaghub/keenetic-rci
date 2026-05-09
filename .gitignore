@@ -40,3 +40,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Prokect ###
+/src/test/resources/keenetic-rci-config.yaml

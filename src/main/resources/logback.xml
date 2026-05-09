@@ -1,0 +1,19 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- sshj -->
+    <logger name="net.schmizz" level="WARN"/>
+
+    <!-- jackson -->
+    <logger name="com.fasterxml.jackson" level="WARN"/>
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>
