@@ -9,6 +9,7 @@ import com.github.khetaghub.keenetic.rci.transport.ssh.SshTransport
 
 interface KeeneticApi {
 
+    fun routing(): RoutingApi
     fun system(): SystemApi
 
     companion object {

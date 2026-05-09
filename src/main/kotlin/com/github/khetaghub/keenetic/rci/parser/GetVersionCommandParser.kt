@@ -7,7 +7,9 @@ import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
 
-class GetVersionCommandParser(private val objectMapper: ObjectMapper) : Parser<Version> {
+class GetVersionCommandParser(
+    private val objectMapper: ObjectMapper
+) : Parser<Version> {
 
     override fun suitable(commandType: RciCommandType, command: RciCommand<Version>): Boolean {
         return command is GetVersionCommand

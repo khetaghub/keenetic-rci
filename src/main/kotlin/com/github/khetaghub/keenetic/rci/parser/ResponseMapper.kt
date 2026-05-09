@@ -14,6 +14,9 @@ class ResponseParser(
 ) {
 
     private val parsers: List<Parser<*>> = listOf(
+        GetDomainGroupRoutingRulesCommandParser(objectMapper),
+        GetDomainGroupsCommandParser(objectMapper),
+        GetInterfacesCommandParser(objectMapper),
         GetVersionCommandParser(objectMapper)
     )
 
