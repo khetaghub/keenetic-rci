@@ -4,6 +4,8 @@ interface SystemApi {
 
     fun version(): Version
 
+    fun configurationSave()
+
 }
 
 data class Version(
