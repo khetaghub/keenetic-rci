@@ -7,17 +7,13 @@ import com.github.khetaghub.keenetic.rci.command.GetInterfacesCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
+import kotlin.reflect.KClass
 
 class GetInterfacesCommandParser(
     private val objectMapper: ObjectMapper
 ) : Parser<List<Interface>> {
 
-    override fun suitable(
-        commandType: RciCommandType,
-        command: RciCommand<List<Interface>>
-    ): Boolean {
-        return command is GetInterfacesCommand
-    }
+    override val commandClass = GetInterfacesCommand::class
 
     override fun parseHttpResponse(
         commandType: RciCommandType,

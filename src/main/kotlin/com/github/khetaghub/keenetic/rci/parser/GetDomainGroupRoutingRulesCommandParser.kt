@@ -6,15 +6,13 @@ import com.github.khetaghub.keenetic.rci.api.DomainGroupRoutingRule
 import com.github.khetaghub.keenetic.rci.command.GetDomainGroupRoutingRulesCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
+import kotlin.reflect.KClass
 
 class GetDomainGroupRoutingRulesCommandParser(
     private val objectMapper: ObjectMapper,
 ) : Parser<List<DomainGroupRoutingRule>> {
 
-    override fun suitable(
-        commandType: RciCommandType,
-        command: RciCommand<List<DomainGroupRoutingRule>>,
-    ): Boolean = command is GetDomainGroupRoutingRulesCommand
+    override val commandClass = GetDomainGroupRoutingRulesCommand::class
 
     override fun parseHttpResponse(
         commandType: RciCommandType,
@@ -32,7 +30,7 @@ class GetDomainGroupRoutingRulesCommandParser(
                     reject = routeNode.path("reject").asBoolean(false),
                 )
             }
-            ?.filter { it.groupName.isNotBlank() || it.interfaceName.isNotBlank() }
+            ?.filter { it.groupName.isNotBlank() && it.interfaceName.isNotBlank() }
             .orEmpty()
     }
 

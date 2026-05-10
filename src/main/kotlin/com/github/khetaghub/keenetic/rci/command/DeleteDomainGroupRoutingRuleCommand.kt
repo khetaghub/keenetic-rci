@@ -14,6 +14,7 @@ class DeleteDomainGroupRoutingRuleCommand(
 
     init {
         if (domainGroupName.isBlank()) throw KeeneticRciException("Field 'domainGroupName' must not be blank")
+        if (interfaceName.isBlank()) throw KeeneticRciException("Field 'interfaceName' must not be blank")
 
         httpRequestBody = """
             [

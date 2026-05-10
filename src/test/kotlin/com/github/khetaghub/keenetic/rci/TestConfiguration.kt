@@ -2,8 +2,8 @@ package com.github.khetaghub.keenetic.rci
 
 import com.github.khetaghub.keenetic.rci.api.KeeneticApi
 import com.github.khetaghub.keenetic.rci.parser.ResponseParser
-import com.github.khetaghub.keenetic.rci.transport.http.HttpTransport
-import com.github.khetaghub.keenetic.rci.transport.ssh.SshTransport
+import com.github.khetaghub.keenetic.rci.transport.HttpTransport
+import com.github.khetaghub.keenetic.rci.transport.SshTransport
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.provider.Arguments
@@ -47,6 +47,12 @@ object TestConfiguration {
         httpApi?.let { add(Arguments.of("HTTP", it)) }
         sshApi?.let { add(Arguments.of("SSH", it)) }
     }
+
+    fun firstApiOrNull(): KeeneticApi? =
+        apis()
+            .firstOrNull()
+            ?.get()
+            ?.get(1) as? KeeneticApi
 
     fun checkSame(request: (api: KeeneticApi) -> Any) {
         val results = apis()

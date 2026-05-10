@@ -7,11 +7,13 @@ import com.github.khetaghub.keenetic.rci.api.KeeneticApi
 import com.github.khetaghub.keenetic.rci.utils.randomKey
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
+@Tag("integration")
 class RoutingApiTest {
 
     companion object {
@@ -22,7 +24,7 @@ class RoutingApiTest {
         @AfterAll
         @JvmStatic
         fun clean() {
-            val api = TestConfiguration.httpApi!!
+            val api = TestConfiguration.firstApiOrNull() ?: return
 
             deletableDomainGroupNames.forEach { name ->
                 runCatching { api.routing().deleteDomainGroup(name) }

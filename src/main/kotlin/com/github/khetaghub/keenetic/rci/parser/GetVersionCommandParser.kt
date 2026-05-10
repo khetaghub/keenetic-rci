@@ -6,14 +6,13 @@ import com.github.khetaghub.keenetic.rci.command.GetVersionCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
+import kotlin.reflect.KClass
 
 class GetVersionCommandParser(
     private val objectMapper: ObjectMapper
 ) : Parser<Version> {
 
-    override fun suitable(commandType: RciCommandType, command: RciCommand<Version>): Boolean {
-        return command is GetVersionCommand
-    }
+    override val commandClass = GetVersionCommand::class
 
     override fun parseHttpResponse(
         commandType: RciCommandType,

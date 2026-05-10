@@ -1,4 +1,4 @@
-package com.github.khetaghub.keenetic.rci.transport.ssh
+package com.github.khetaghub.keenetic.rci.transport
 
 import com.github.khetaghub.keenetic.rci.api.KeeneticTransport
 import com.github.khetaghub.keenetic.rci.command.CliCommand
@@ -67,8 +67,9 @@ class SshTransport private constructor(
 
         val stdout = command.inputStream.bufferedReader().use { it.readText() }
         val exitStatus = command.exitStatus
+            ?: throw KeeneticRciException("CLI command timed out after $commandTimeoutMillis ms: $cliCommand")
 
-        if (exitStatus != null && exitStatus != 0) {
+        if (exitStatus != 0) {
             throw CliCommandExecutionException(
                 exitCode = exitStatus,
                 command = cliCommand,
@@ -89,8 +90,10 @@ class SshTransport private constructor(
             else -> {
                 val defaultKnownHosts = File(System.getProperty("user.home"), ".ssh/known_hosts")
                 if (!defaultKnownHosts.exists()) {
-                    "Known hosts file not found at ${defaultKnownHosts.absolutePath}. " +
-                            "Use knownHostsFile(...) or allowAnyHostKey() explicitly."
+                    throw KeeneticRciException(
+                        "Known hosts file not found at ${defaultKnownHosts.absolutePath}. " +
+                                "Use knownHostsFile(...) or allowAnyHostKey() explicitly."
+                    )
                 }
                 ssh.loadKnownHosts(defaultKnownHosts)
             }

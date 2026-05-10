@@ -1,9 +1,10 @@
-package com.github.khetaghub.keenetic.rci.transport.http
+package com.github.khetaghub.keenetic.rci.transport
 
 import com.github.khetaghub.keenetic.rci.api.KeeneticTransport
 import com.github.khetaghub.keenetic.rci.command.HttpBatchCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
+import com.fasterxml.jackson.core.io.JsonStringEncoder
 import mu.KotlinLogging
 import okhttp3.JavaNetCookieJar
 import okhttp3.MediaType.Companion.toMediaType
@@ -29,15 +30,15 @@ class HttpTransport private constructor(
 
     private val logger = KotlinLogging.logger { }
 
-    init {
-        if (!auth()) {
-            throw KeeneticRciException("Authentication failed")
-        }
-    }
+    @Volatile
+    private var authenticated = false
 
     override fun execute(command: RciCommand<*>): String {
         val httpCommand = command as? HttpBatchCommand<*>
             ?: throw KeeneticRciException("HttpTransport supports only HTTP commands")
+
+        ensureAuthenticated()
+
         val response = execute(buildPostRequest("$rciUrl/", httpCommand.httpRequestBody))
         logger.debug { "command=${command.javaClass.simpleName} response=$response" }
         return response
@@ -46,6 +47,20 @@ class HttpTransport private constructor(
     private fun md5(input: String): String = digest("MD5", input)
 
     private fun sha256(input: String): String = digest("SHA-256", input)
+
+    private fun ensureAuthenticated() {
+        if (authenticated) return
+
+        synchronized(this) {
+            if (authenticated) return
+
+            if (!auth()) {
+                throw KeeneticRciException("Authentication failed")
+            }
+
+            authenticated = true
+        }
+    }
 
     private fun auth(): Boolean {
         httpClient.newCall(buildAuthRequest()).execute().use { response ->
@@ -71,6 +86,7 @@ class HttpTransport private constructor(
                 if (!auth()) {
                     throw KeeneticRciException("Authentication failed")
                 }
+                authenticated = true
                 return execute(request, allowRetry = false)
             }
 
@@ -102,19 +118,13 @@ class HttpTransport private constructor(
             .post(json.toJsonBody())
             .build()
 
-    private fun buildRciUrl(query: String): String {
-        val normalizedQuery = query.trimStart('/')
-        return "$rciUrl/$normalizedQuery"
-    }
-
-    private fun authPayload(passwordHash: String): String = """
-        {
-          "login": "$username",
-          "password": "$passwordHash"
-        }
-    """.trimIndent()
+    private fun authPayload(passwordHash: String): String =
+        """{"login":"${username.toJsonString()}","password":"$passwordHash"}"""
 
     private fun String.toJsonBody() = toRequestBody(JSON_MEDIA_TYPE)
+
+    private fun String.toJsonString(): String =
+        JsonStringEncoder.getInstance().quoteAsString(this).concatToString()
 
     private fun isSuccessfulAuth(response: Response): Boolean = response.code == 200
 

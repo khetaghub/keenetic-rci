@@ -20,7 +20,7 @@ internal fun escapeJson(value: String): String = buildString {
 
 internal fun String.toCliToken(): String {
     if (isBlank()) throw KeeneticRciException("CLI token must not be blank")
-    if (contains('\n') && !contains('\r')) throw KeeneticRciException("CLI token must not contain line breaks")
+    if (contains('\n') || contains('\r')) throw KeeneticRciException("CLI token must not contain line breaks")
     if (contains('"')) throw KeeneticRciException("CLI token must not contain quotes")
     return this
 }
