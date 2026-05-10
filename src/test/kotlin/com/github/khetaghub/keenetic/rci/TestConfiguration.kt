@@ -1,9 +1,12 @@
 package com.github.khetaghub.keenetic.rci
 
 import com.github.khetaghub.keenetic.rci.api.KeeneticApi
+import com.github.khetaghub.keenetic.rci.parser.DefaultResponseParser
 import com.github.khetaghub.keenetic.rci.parser.ResponseParser
 import com.github.khetaghub.keenetic.rci.transport.HttpTransport
 import com.github.khetaghub.keenetic.rci.transport.SshTransport
+import com.github.khetaghub.keenetic.rci.validator.DefaultResponseValidator
+import com.github.khetaghub.keenetic.rci.validator.ResponseValidator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.provider.Arguments
@@ -11,7 +14,8 @@ import org.junit.jupiter.params.provider.Arguments
 object TestConfiguration {
 
     private val cfg = TestConfigLoader.load()
-    private val parser = ResponseParser()
+    private val responseParser: ResponseParser = DefaultResponseParser()
+    private val responseValidator: ResponseValidator = DefaultResponseValidator()
 
     val httpApi: KeeneticApi? by lazy {
         if (!cfg.keeneticRci.transport.http.enabled) return@lazy null
@@ -24,7 +28,7 @@ object TestConfiguration {
             )
             .build()
 
-        KeeneticApi.create(transport, parser)
+        KeeneticApi.create(transport, responseParser, responseValidator)
     }
 
     val sshApi: KeeneticApi? by lazy {
@@ -39,7 +43,7 @@ object TestConfiguration {
             )
             .build()
 
-        KeeneticApi.create(transport, parser)
+        KeeneticApi.create(transport, responseParser, responseValidator)
     }
 
     @JvmStatic

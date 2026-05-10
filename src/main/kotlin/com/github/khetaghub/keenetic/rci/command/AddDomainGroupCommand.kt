@@ -1,7 +1,6 @@
 package com.github.khetaghub.keenetic.rci.command
 
 import com.github.khetaghub.keenetic.rci.api.DomainGroup
-import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
 import com.github.khetaghub.keenetic.rci.utils.escapeJson
 import com.github.khetaghub.keenetic.rci.utils.toCliString
 import com.github.khetaghub.keenetic.rci.utils.toCliToken
@@ -11,12 +10,22 @@ class AddDomainGroupCommand(
 ) : HttpBatchCommand<Unit>, CliCommand<Unit> {
 
     override val httpRequestBody: String
-    override val cliCommand: CliCommandView
+
+    override val cliCommand = CliCommandView.Sequential(
+        buildList {
+            add("object-group fqdn ${domainGroup.name.toCliToken()}")
+
+            if (domainGroup.description.isNotBlank()) {
+                add("object-group fqdn ${domainGroup.name.toCliToken()} description ${domainGroup.description.toCliString()}")
+            }
+
+            domainGroup.addresses.distinct().forEach { address ->
+                add("object-group fqdn ${domainGroup.name.toCliToken()} include ${address.toCliToken()}")
+            }
+        }
+    )
 
     init {
-        if (domainGroup.name.isBlank()) throw KeeneticRciException("Field 'name' must not be blank")
-        if (domainGroup.description.isBlank()) throw KeeneticRciException("Field 'description' must not be blank")
-
         val description = domainGroup.description
             .takeIf { it.isNotBlank() }
             ?.let { """"description":"${escapeJson(it)}",""" }
@@ -42,20 +51,6 @@ class AddDomainGroupCommand(
               }
             ]
         """.trimIndent()
-
-        cliCommand = CliCommandView.Sequential(
-            buildList {
-                add("object-group fqdn ${domainGroup.name.toCliToken()}")
-
-                if (domainGroup.description.isNotBlank()) {
-                    add("object-group fqdn ${domainGroup.name.toCliToken()} description ${domainGroup.description.toCliString()}")
-                }
-
-                domainGroup.addresses.distinct().forEach { address ->
-                    add("object-group fqdn ${domainGroup.name.toCliToken()} include ${address.toCliToken()}")
-                }
-            }
-        )
     }
 
 }

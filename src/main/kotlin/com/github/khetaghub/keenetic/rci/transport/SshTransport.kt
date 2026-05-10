@@ -4,7 +4,7 @@ import com.github.khetaghub.keenetic.rci.api.KeeneticTransport
 import com.github.khetaghub.keenetic.rci.command.CliCommand
 import com.github.khetaghub.keenetic.rci.command.CliCommandView
 import com.github.khetaghub.keenetic.rci.command.RciCommand
-import com.github.khetaghub.keenetic.rci.exception.CliCommandExecutionException
+import com.github.khetaghub.keenetic.rci.exception.KeeneticNdmsException
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
 import mu.KotlinLogging
 import net.schmizz.sshj.SSHClient
@@ -65,21 +65,39 @@ class SshTransport private constructor(
         val command = session.exec(cliCommand)
         command.join(commandTimeoutMillis, TimeUnit.MILLISECONDS)
 
-        val stdout = command.inputStream.bufferedReader().use { it.readText() }
-        val exitStatus = command.exitStatus
-            ?: throw KeeneticRciException("CLI command timed out after $commandTimeoutMillis ms: $cliCommand")
+        val std = buildString {
+            val stdout = command.inputStream
+                .bufferedReader()
+                .use { it.readText() }
+            if (stdout.isNotBlank()) {
+                appendLine("stdout:")
+                appendLine(stdout.trim())
+            }
+
+            val stderr = command.errorStream
+                .bufferedReader()
+                .use { it.readText() }
+            if (stderr.isNotBlank()) {
+                appendLine("stderr:")
+                appendLine(stderr.trim())
+            }
+        }
+
+        val exitStatus = command.exitStatus ?: throw KeeneticRciException(
+            "CLI command timed out after $commandTimeoutMillis ms: $cliCommand"
+        )
+
+        logger.debug { "command=${command.javaClass.simpleName} response=$std" }
 
         if (exitStatus != 0) {
-            throw CliCommandExecutionException(
+            throw KeeneticNdmsException(
                 exitCode = exitStatus,
                 command = cliCommand,
-                message = stdout.replace(ansiRegex, "").trim()
+                output = std,
             )
         }
 
-        logger.debug { "command=${command.javaClass.simpleName} response=$stdout" }
-
-        return stdout.trim()
+        return std.trim()
     }
 
     private fun configureHostKeyVerification(ssh: SSHClient) {

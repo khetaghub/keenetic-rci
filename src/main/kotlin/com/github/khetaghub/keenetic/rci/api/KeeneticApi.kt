@@ -7,6 +7,9 @@ import com.github.khetaghub.keenetic.rci.api.impl.RciCommandExecutor
 import com.github.khetaghub.keenetic.rci.transport.HttpTransport
 import com.github.khetaghub.keenetic.rci.transport.SshTransport
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
+import com.github.khetaghub.keenetic.rci.parser.DefaultResponseParser
+import com.github.khetaghub.keenetic.rci.validator.DefaultResponseValidator
+import com.github.khetaghub.keenetic.rci.validator.ResponseValidator
 
 interface KeeneticApi {
 
@@ -17,7 +20,8 @@ interface KeeneticApi {
     companion object {
         fun create(
             transport: KeeneticTransport,
-            responseParser: ResponseParser = ResponseParser(),
+            responseParser: ResponseParser = DefaultResponseParser(),
+            responseValidator: ResponseValidator = DefaultResponseValidator(),
         ): KeeneticApi {
             val commandType = when (transport) {
                 is HttpTransport -> RciCommandType.HTTP
@@ -30,6 +34,7 @@ interface KeeneticApi {
                     transport = transport,
                     commandType = commandType,
                     responseParser = responseParser,
+                    responseValidator = responseValidator,
                 )
             )
         }

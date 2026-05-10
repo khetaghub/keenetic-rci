@@ -1,6 +1,5 @@
 package com.github.khetaghub.keenetic.rci.command
 
-import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
 import com.github.khetaghub.keenetic.rci.utils.escapeJson
 import com.github.khetaghub.keenetic.rci.utils.toCliToken
 
@@ -9,14 +8,7 @@ class DeleteDomainGroupRoutingRuleCommand(
     interfaceName: String,
 ) : HttpBatchCommand<Unit>, CliCommand<Unit> {
 
-    override val httpRequestBody: String
-    override val cliCommand: CliCommandView
-
-    init {
-        if (domainGroupName.isBlank()) throw KeeneticRciException("Field 'domainGroupName' must not be blank")
-        if (interfaceName.isBlank()) throw KeeneticRciException("Field 'interfaceName' must not be blank")
-
-        httpRequestBody = """
+    override val httpRequestBody = """
             [
               {
                 "dns-proxy": {
@@ -30,7 +22,6 @@ class DeleteDomainGroupRoutingRuleCommand(
             ]
         """.trimIndent()
 
-        cliCommand = CliCommandView.Single("no dns-proxy route object-group ${domainGroupName.toCliToken()} ${interfaceName.toCliToken()}")
-    }
+    override val cliCommand = CliCommandView.Single("no dns-proxy route object-group ${domainGroupName.toCliToken()} ${interfaceName.toCliToken()}")
 
 }

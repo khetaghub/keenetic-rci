@@ -8,11 +8,21 @@ import com.github.khetaghub.keenetic.rci.command.RciCommandType
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
 import kotlin.reflect.KClass
 
-class ResponseParser(
+interface ResponseParser {
+
+    fun <T> parse(
+        commandType: RciCommandType,
+        command: RciCommand<T>,
+        response: String
+    ): T
+
+}
+
+class DefaultResponseParser(
     objectMapper: ObjectMapper = jacksonObjectMapper().apply {
         disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     }
-) {
+) : ResponseParser {
 
     private val parsers: Map<KClass<out RciCommand<*>>, Parser<*>> = listOf(
         GetDomainGroupRoutingRulesCommandParser(objectMapper),
@@ -21,7 +31,7 @@ class ResponseParser(
         GetVersionCommandParser(objectMapper)
     ).associateByUniqueCommandClass()
 
-    fun <T> parse(
+    override fun <T> parse(
         commandType: RciCommandType,
         command: RciCommand<T>,
         response: String

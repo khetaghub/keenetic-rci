@@ -30,27 +30,12 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.2")
     testImplementation("org.assertj:assertj-core:3.27.7")
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.5.6")
+    testImplementation("io.mockk:mockk:1.13.11")
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.5.13")
 }
 
 tasks.test {
-    useJUnitPlatform {
-        excludeTags("integration")
-    }
-}
-
-tasks.register<Test>("integrationTest") {
-    description = "Runs integration tests against a real Keenetic device."
-    group = "verification"
-
-    testClassesDirs = sourceSets.test.get().output.classesDirs
-    classpath = sourceSets.test.get().runtimeClasspath
-
-    useJUnitPlatform {
-        includeTags("integration")
-    }
-
-    shouldRunAfter(tasks.test)
+    useJUnitPlatform()
 }
 
 kotlin {
