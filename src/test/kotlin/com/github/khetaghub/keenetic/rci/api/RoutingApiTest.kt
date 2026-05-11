@@ -52,8 +52,14 @@ class RoutingApiTest {
         }
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("com.github.khetaghub.keenetic.rci.TestConfiguration#apis")
+    fun getDomainGroupsList_checkTransport(@Suppress("UNUSED_PARAMETER") transport: String, api: KeeneticApi) {
+        api.routing().getDomainGroupsList()
+    }
+
     @Test
-    fun `getDomainGroupsList returns the same data`() {
+    fun getDomainGroupsList_checkSameResponse() {
         TestConfiguration.checkSame { api ->
             api.routing().getDomainGroupsList()
         }
@@ -82,8 +88,14 @@ class RoutingApiTest {
         assertThat(api.domainGroupNames()).doesNotContain(domainGroup.name)
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("com.github.khetaghub.keenetic.rci.TestConfiguration#apis")
+    fun getDomainGroupRoutingRulesList_checkTransport(@Suppress("UNUSED_PARAMETER") transport: String, api: KeeneticApi) {
+        api.routing().getDomainGroupRoutingRulesList()
+    }
+
     @Test
-    fun `getDomainGroupRoutingRulesList returns the same data`() {
+    fun getDomainGroupRoutingRulesList_checkSameResponse() {
         TestConfiguration.checkSame { api ->
             api.routing().getDomainGroupRoutingRulesList()
         }
