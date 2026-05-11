@@ -5,7 +5,7 @@ import com.github.khetaghub.keenetic.rci.command.CliCommand
 import com.github.khetaghub.keenetic.rci.command.CliCommandView
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.exception.KeeneticNdmsException
-import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
+import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportException
 import mu.KotlinLogging
 import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.connection.channel.direct.Session
@@ -26,12 +26,11 @@ class SshTransport private constructor(
     private val hostKeyVerifier: HostKeyVerifier?,
 ) : KeeneticTransport {
 
-    private val ansiRegex = Regex("\\u001B\\[[;\\d]*[ -/]*[@-~]")
     private val logger = KotlinLogging.logger { }
 
     override fun execute(command: RciCommand<*>): String {
         val cliCommand = command as? CliCommand<*>
-            ?: throw KeeneticRciException("SSH transport supports only CLI commands")
+            ?: throw KeeneticRciTransportException("SSH transport supports only CLI commands")
 
         return SSHClient().use { ssh ->
             configureHostKeyVerification(ssh)
@@ -49,7 +48,9 @@ class SshTransport private constructor(
                     }
 
                 is CliCommandView.Sequential -> {
-                    if (view.commands.isEmpty()) throw KeeneticRciException("CLI sequential must not be empty")
+                    if (view.commands.isEmpty()) {
+                        throw KeeneticRciTransportException("CLI sequential must not be empty")
+                    }
 
                     view.commands.joinToString("\n") { commandLine ->
                         ssh.startSession().use { session ->
@@ -83,7 +84,7 @@ class SshTransport private constructor(
             }
         }
 
-        val exitStatus = command.exitStatus ?: throw KeeneticRciException(
+        val exitStatus = command.exitStatus ?: throw KeeneticRciTransportException(
             "CLI command timed out after $commandTimeoutMillis ms: $cliCommand"
         )
 
@@ -108,7 +109,7 @@ class SshTransport private constructor(
             else -> {
                 val defaultKnownHosts = File(System.getProperty("user.home"), ".ssh/known_hosts")
                 if (!defaultKnownHosts.exists()) {
-                    throw KeeneticRciException(
+                    throw KeeneticRciTransportException(
                         "Known hosts file not found at ${defaultKnownHosts.absolutePath}. " +
                                 "Use knownHostsFile(...) or allowAnyHostKey() explicitly."
                     )

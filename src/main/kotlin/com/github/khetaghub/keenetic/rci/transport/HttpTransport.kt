@@ -3,8 +3,8 @@ package com.github.khetaghub.keenetic.rci.transport
 import com.github.khetaghub.keenetic.rci.api.KeeneticTransport
 import com.github.khetaghub.keenetic.rci.command.HttpBatchCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
-import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
 import com.fasterxml.jackson.core.io.JsonStringEncoder
+import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportException
 import mu.KotlinLogging
 import okhttp3.JavaNetCookieJar
 import okhttp3.MediaType.Companion.toMediaType
@@ -35,7 +35,7 @@ class HttpTransport private constructor(
 
     override fun execute(command: RciCommand<*>): String {
         val httpCommand = command as? HttpBatchCommand<*>
-            ?: throw KeeneticRciException("HttpTransport supports only HTTP commands")
+            ?: throw KeeneticRciTransportException("HttpTransport supports only HTTP commands")
 
         ensureAuthenticated()
 
@@ -54,38 +54,42 @@ class HttpTransport private constructor(
         synchronized(this) {
             if (authenticated) return
 
-            if (!auth()) {
-                throw KeeneticRciException("Authentication failed")
-            }
+            auth()
 
             authenticated = true
         }
     }
 
-    private fun auth(): Boolean {
-        httpClient.newCall(buildAuthRequest()).execute().use { response ->
-            return when (response.code) {
+    private fun auth() {
+        val authed: Boolean = httpClient.newCall(buildAuthRequest()).execute().use { response ->
+            when (response.code) {
                 200 -> true
+
                 401 -> {
-                    val realm = response.header("X-NDM-Realm") ?: return false
-                    val challenge = response.header("X-NDM-Challenge") ?: return false
+                    val realm = response.header("X-NDM-Realm") ?: return@use false
+                    val challenge = response.header("X-NDM-Challenge") ?: return@use false
 
                     val stage1Hash = md5("$username:$realm:$password")
                     val stage2Hash = sha256(challenge + stage1Hash)
-                    httpClient.newCall(buildAuthRequest(stage2Hash)).execute().use(::isSuccessfulAuth)
+
+                    httpClient.newCall(buildAuthRequest(stage2Hash))
+                        .execute()
+                        .use(::isSuccessfulAuth)
                 }
 
                 else -> false
             }
+        }
+
+        if (!authed) {
+            throw KeeneticRciTransportException("Authentication failed")
         }
     }
 
     private fun execute(request: Request, allowRetry: Boolean = true): String {
         httpClient.newCall(request).execute().use { response ->
             if (response.code == 401 && allowRetry) {
-                if (!auth()) {
-                    throw KeeneticRciException("Authentication failed")
-                }
+                auth()
                 authenticated = true
                 return execute(request, allowRetry = false)
             }
@@ -93,7 +97,7 @@ class HttpTransport private constructor(
             val body = response.body?.string().orEmpty()
 
             if (!response.isSuccessful) {
-                throw KeeneticRciException(
+                throw KeeneticRciTransportException(
                     "Request failed: HTTP ${response.code}, body=$body"
                 )
             }
