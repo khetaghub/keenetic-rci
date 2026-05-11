@@ -4,6 +4,7 @@ import com.github.khetaghub.keenetic.rci.api.DomainGroupRoutingRule
 import com.github.khetaghub.keenetic.rci.utils.escapeJson
 import com.github.khetaghub.keenetic.rci.utils.toCliToken
 
+/** Adds a DNS proxy route for an FQDN object group through a selected interface. */
 class AddDomainGroupRoutingRuleCommand(
     dgRoutingRule: DomainGroupRoutingRule,
 ) : HttpBatchCommand<Unit>, CliCommand<Unit> {

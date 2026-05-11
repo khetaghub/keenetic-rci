@@ -28,7 +28,7 @@ class RoutingApiTest {
             api.system().configurationSave()
         }
 
-        // при удалении DomainGroup удаляются зависимые DomainGroupRoutingRule
+        // Deleting a DomainGroup also deletes dependent DomainGroupRoutingRule entries.
         @JvmStatic
         private fun newDomainGroup(markForCleanup: Boolean = false): DomainGroup {
             val id = randomKey()

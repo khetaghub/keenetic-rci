@@ -2,6 +2,7 @@ package com.github.khetaghub.keenetic.rci.api
 
 interface InterfaceApi {
 
+    /** Returns interfaces known to NDMS, ordered as reported by the device. */
     fun getInterfacesList(): List<Interface>
 
 }

@@ -5,6 +5,7 @@ import com.github.khetaghub.keenetic.rci.utils.escapeJson
 import com.github.khetaghub.keenetic.rci.utils.toCliString
 import com.github.khetaghub.keenetic.rci.utils.toCliToken
 
+/** Creates an FQDN object group and its included domain addresses. */
 class AddDomainGroupCommand(
     domainGroup: DomainGroup,
 ) : HttpBatchCommand<Unit>, CliCommand<Unit> {
@@ -26,6 +27,7 @@ class AddDomainGroupCommand(
     )
 
     init {
+        // The HTTP RCI shape uses the group name as a JSON key, so this body is assembled after escaping user data.
         val description = domainGroup.description
             .takeIf { it.isNotBlank() }
             ?.let { """"description":"${escapeJson(it)}",""" }

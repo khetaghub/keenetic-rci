@@ -11,13 +11,30 @@ import com.github.khetaghub.keenetic.rci.parser.DefaultResponseParser
 import com.github.khetaghub.keenetic.rci.validator.DefaultResponseValidator
 import com.github.khetaghub.keenetic.rci.validator.ResponseValidator
 
+/**
+ * Main entry point for the SDK.
+ *
+ * The API is split into domain-specific facades so callers do not have to work
+ * with raw NDMS RCI commands directly.
+ */
 interface KeeneticApi {
 
+    /** Operations for Keenetic interfaces. */
     fun interfaces(): InterfaceApi
+
+    /** Operations for IPv4, IPv6, and DNS routes, plus FQDN groups. */
     fun routing(): RoutingApi
+
+    /** System-level operations. */
     fun system(): SystemApi
 
     companion object {
+        /**
+         * Creates an API facade for the selected transport.
+         *
+         * HTTP transport sends JSON RCI requests to `/rci/`, while SSH transport
+         * executes equivalent CLI commands and parses their output.
+         */
         fun create(
             transport: KeeneticTransport,
             responseParser: ResponseParser = DefaultResponseParser(),

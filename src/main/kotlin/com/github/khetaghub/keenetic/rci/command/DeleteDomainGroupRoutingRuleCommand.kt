@@ -3,6 +3,7 @@ package com.github.khetaghub.keenetic.rci.command
 import com.github.khetaghub.keenetic.rci.utils.escapeJson
 import com.github.khetaghub.keenetic.rci.utils.toCliToken
 
+/** Removes a DNS proxy route identified by domain group and interface. */
 class DeleteDomainGroupRoutingRuleCommand(
     domainGroupName: String,
     interfaceName: String,

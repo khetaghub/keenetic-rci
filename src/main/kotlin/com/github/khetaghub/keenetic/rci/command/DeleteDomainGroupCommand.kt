@@ -3,6 +3,7 @@ package com.github.khetaghub.keenetic.rci.command
 import com.github.khetaghub.keenetic.rci.utils.escapeJson
 import com.github.khetaghub.keenetic.rci.utils.toCliToken
 
+/** Removes an FQDN object group by name. */
 class DeleteDomainGroupCommand(
     domainGroupName: String,
 ) : HttpBatchCommand<Unit>, CliCommand<Unit> {
