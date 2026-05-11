@@ -4,6 +4,7 @@ import com.github.khetaghub.keenetic.rci.api.KeeneticTransport
 import com.github.khetaghub.keenetic.rci.command.HttpBatchCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.fasterxml.jackson.core.io.JsonStringEncoder
+import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportAuthException
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportException
 import mu.KotlinLogging
 import okhttp3.JavaNetCookieJar
@@ -61,28 +62,41 @@ class HttpTransport private constructor(
     }
 
     private fun auth() {
-        val authed: Boolean = httpClient.newCall(buildAuthRequest()).execute().use { response ->
+        val code = httpClient.newCall(buildAuthRequest()).execute().use { response ->
             when (response.code) {
-                200 -> true
-
-                401 -> {
-                    val realm = response.header("X-NDM-Realm") ?: return@use false
-                    val challenge = response.header("X-NDM-Challenge") ?: return@use false
-
-                    val stage1Hash = md5("$username:$realm:$password")
-                    val stage2Hash = sha256(challenge + stage1Hash)
-
-                    httpClient.newCall(buildAuthRequest(stage2Hash))
-                        .execute()
-                        .use(::isSuccessfulAuth)
-                }
-
-                else -> false
+                200 -> 200
+                401 -> challengeAuth(response)
+                else -> response.code
             }
         }
 
-        if (!authed) {
-            throw KeeneticRciTransportException("Authentication failed")
+        if (code == 401) {
+            throw KeeneticRciTransportAuthException("HTTP transport authentication failed")
+        }
+        if (code != 200) {
+            throw KeeneticRciTransportException("Request failed with HTTP code $code")
+        }
+    }
+
+    private fun challengeAuth(response: Response): Int {
+        val realm = response.header("X-NDM-Realm") ?: return 401
+        val challenge = response.header("X-NDM-Challenge") ?: return 401
+
+        val stage1Hash = md5("$username:$realm:$password")
+        val stage2Hash = sha256(challenge + stage1Hash)
+
+        val authResponse = httpClient.newCall(buildAuthRequest(stage2Hash))
+            .execute()
+        return authResponse.use { it.code }
+    }
+
+    private fun buildAuthRequest(passwordHash: String? = null): Request {
+        val builder = Request.Builder().url(authUrl)
+
+        return if (passwordHash == null) {
+            builder.get().build()
+        } else {
+            builder.post(authPayload(passwordHash).toJsonBody()).build()
         }
     }
 
@@ -106,16 +120,6 @@ class HttpTransport private constructor(
         }
     }
 
-    private fun buildAuthRequest(passwordHash: String? = null): Request {
-        val builder = Request.Builder().url(authUrl)
-
-        return if (passwordHash == null) {
-            builder.get().build()
-        } else {
-            builder.post(authPayload(passwordHash).toJsonBody()).build()
-        }
-    }
-
     private fun buildPostRequest(url: String, json: String): Request =
         Request.Builder()
             .url(url)
@@ -129,8 +133,6 @@ class HttpTransport private constructor(
 
     private fun String.toJsonString(): String =
         JsonStringEncoder.getInstance().quoteAsString(this).concatToString()
-
-    private fun isSuccessfulAuth(response: Response): Boolean = response.code == 200
 
     private fun digest(algorithm: String, input: String): String =
         MessageDigest.getInstance(algorithm)

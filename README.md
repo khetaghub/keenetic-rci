@@ -53,6 +53,9 @@ graph TD
 
 ### HTTP
 
+> [!IMPORTANT]
+> Пользователь Keenetic, указанный в `credentials(...)`, должен иметь как минимум доступ **«Веб-конфигуратор»**.
+
 ```kotlin
 import com.github.khetaghub.keenetic.rci.api.KeeneticApi
 import com.github.khetaghub.keenetic.rci.transport.HttpTransport
@@ -70,6 +73,9 @@ val version = api.system().version()
 `HttpTransport` авторизуется лениво при первом запросе и один раз повторяет авторизацию, если получает ответ `401`.
 
 ### SSH
+
+> [!IMPORTANT]
+> Пользователь Keenetic, указанный в `credentials(...)`, должен иметь как минимум доступ **«Командная строка»**.
 
 ```kotlin
 import com.github.khetaghub.keenetic.rci.api.KeeneticApi

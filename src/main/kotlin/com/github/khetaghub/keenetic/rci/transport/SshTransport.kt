@@ -5,6 +5,7 @@ import com.github.khetaghub.keenetic.rci.command.CliCommand
 import com.github.khetaghub.keenetic.rci.command.CliCommandView
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.exception.KeeneticNdmsException
+import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportAuthException
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportException
 import mu.KotlinLogging
 import net.schmizz.sshj.SSHClient
@@ -39,7 +40,11 @@ class SshTransport private constructor(
             ssh.timeout = commandTimeoutMillis.toInt()
 
             ssh.connect(host, port)
-            ssh.authPassword(username, password)
+            try {
+                ssh.authPassword(username, password)
+            } catch (e: net.schmizz.sshj.userauth.UserAuthException) {
+                throw KeeneticRciTransportAuthException("SSH transport authentication failed: ${e.message}", e)
+            }
 
             when (val view = cliCommand.cliCommand) {
                 is CliCommandView.Single ->
