@@ -268,28 +268,28 @@ String response = api.executeRaw("show version");
 
 `interfaces()` — фасад для управления интерфейсами.
 
-| Метод | Что делает | HTTP RCI | CLI |
-| --- | --- | --- | --- |
-| `api.interfaces().getInterfacesList()` | Возвращает список интерфейсов (`List<Interface>`) | `show.interface` | `show interface` |
+| Метод | Что делает |
+| --- | --- |
+| `api.interfaces().getInterfacesList()` | Возвращает список интерфейсов (`List<Interface>`) |
 
 ### System API
 
 `system()` — фасад для работы с системой и конфигурациями.
 
-| Метод | Что делает | HTTP RCI | CLI |
-| --- | --- | --- | --- |
-| `api.system().version()` | Возвращает версию прошивки и данные платформы (`Version`) | `show.version` | `show version` |
-| `api.system().configurationSave()` | Сохраняет running-конфигурацию в startup-конфигурацию | `system.configuration.save` | `system configuration save` |
+| Метод | Что делает |
+| --- | --- |
+| `api.system().version()` | Возвращает версию прошивки и данные платформы (`Version`) |
+| `api.system().configurationSave()` | Сохраняет running-конфигурацию в startup-конфигурацию |
 
 ### Routing API
 
 `routing()` — фасад для управления маршрутами IPv4, IPv6, DNS и DNS-группами.  
 
-| Метод | Что делает | HTTP RCI | CLI |
-| --- | --- | --- | --- |
-| `api.routing().getDomainGroupsList()` | Возвращает FQDN object-group (`List<DomainGroup>`) | `show.sc.object-group.fqdn` | `show running-config` |
-| `api.routing().addDomainGroup(domainGroup)` | Создает или обновляет FQDN object-group с описанием и адресами | `object-group.fqdn` | `object-group fqdn ...` |
-| `api.routing().deleteDomainGroup(domainGroupName)` | Удаляет FQDN object-group по имени | `object-group.fqdn` с `no: true` | `no object-group fqdn ...` |
-| `api.routing().getDomainGroupRoutingRulesList()` | Возвращает DNS proxy routes для групп доменов (`List<DomainGroupRoutingRule>`) | `show.sc.dns-proxy.route` | `show running-config` |
-| `api.routing().addDomainGroupRoutingRule(rule)` | Добавляет DNS proxy route для группы доменов через выбранный интерфейс | `dns-proxy.route` | `dns-proxy route object-group ...` |
-| `api.routing().deleteDomainGroupRoutingRule(domainGroupName, interfaceName)` | Удаляет DNS proxy route по группе доменов и интерфейсу | `dns-proxy.route` с `no: true` | `no dns-proxy route object-group ...` |
+| Метод | Что делает |
+| --- | --- |
+| `api.routing().getDomainGroupsList()` | Возвращает FQDN object-group (`List<DomainGroup>`) |
+| `api.routing().addDomainGroup(domainGroup)` | Создает или обновляет FQDN object-group с описанием и адресами |
+| `api.routing().deleteDomainGroup(domainGroupName)` | Удаляет FQDN object-group по имени |
+| `api.routing().getDomainGroupRoutingRulesList()` | Возвращает DNS proxy routes для групп доменов (`List<DomainGroupRoutingRule>`) |
+| `api.routing().addDomainGroupRoutingRule(rule)` | Добавляет DNS proxy route для группы доменов через выбранный интерфейс |
+| `api.routing().deleteDomainGroupRoutingRule(domainGroupName, interfaceName)` | Удаляет DNS proxy route по группе доменов и интерфейсу |
