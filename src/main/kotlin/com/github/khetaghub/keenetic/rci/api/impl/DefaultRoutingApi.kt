@@ -3,12 +3,7 @@ package com.github.khetaghub.keenetic.rci.api.impl
 import com.github.khetaghub.keenetic.rci.api.DomainGroup
 import com.github.khetaghub.keenetic.rci.api.DomainGroupRoutingRule
 import com.github.khetaghub.keenetic.rci.api.RoutingApi
-import com.github.khetaghub.keenetic.rci.command.AddDomainGroupCommand
-import com.github.khetaghub.keenetic.rci.command.AddDomainGroupRoutingRuleCommand
-import com.github.khetaghub.keenetic.rci.command.DeleteDomainGroupCommand
-import com.github.khetaghub.keenetic.rci.command.DeleteDomainGroupRoutingRuleCommand
-import com.github.khetaghub.keenetic.rci.command.GetDomainGroupRoutingRulesCommand
-import com.github.khetaghub.keenetic.rci.command.GetDomainGroupsCommand
+import com.github.khetaghub.keenetic.rci.command.*
 import com.github.khetaghub.keenetic.rci.validator.RoutingApiValidator
 
 internal class DefaultRoutingApi(

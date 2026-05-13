@@ -6,7 +6,6 @@ import com.github.khetaghub.keenetic.rci.command.GetVersionCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
-import kotlin.reflect.KClass
 
 class GetVersionCommandParser(
     private val objectMapper: ObjectMapper

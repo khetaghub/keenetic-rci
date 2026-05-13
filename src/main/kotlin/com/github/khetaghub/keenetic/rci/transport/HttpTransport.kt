@@ -1,9 +1,9 @@
 package com.github.khetaghub.keenetic.rci.transport
 
+import com.fasterxml.jackson.core.io.JsonStringEncoder
 import com.github.khetaghub.keenetic.rci.api.KeeneticTransport
 import com.github.khetaghub.keenetic.rci.command.HttpBatchCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
-import com.fasterxml.jackson.core.io.JsonStringEncoder
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportAuthException
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportException
 import mu.KotlinLogging

@@ -1,13 +1,13 @@
 package com.github.khetaghub.keenetic.rci.api
 
-import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
-import com.github.khetaghub.keenetic.rci.parser.ResponseParser
 import com.github.khetaghub.keenetic.rci.api.impl.DefaultKeeneticApi
 import com.github.khetaghub.keenetic.rci.api.impl.RciCommandExecutor
+import com.github.khetaghub.keenetic.rci.command.RciCommandType
+import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
+import com.github.khetaghub.keenetic.rci.parser.DefaultResponseParser
+import com.github.khetaghub.keenetic.rci.parser.ResponseParser
 import com.github.khetaghub.keenetic.rci.transport.HttpTransport
 import com.github.khetaghub.keenetic.rci.transport.SshTransport
-import com.github.khetaghub.keenetic.rci.command.RciCommandType
-import com.github.khetaghub.keenetic.rci.parser.DefaultResponseParser
 import com.github.khetaghub.keenetic.rci.validator.DefaultResponseValidator
 import com.github.khetaghub.keenetic.rci.validator.ResponseValidator
 
@@ -28,6 +28,9 @@ interface KeeneticApi {
      * Use this method when the SDK does not yet provide a typed facade for the required operation.
      */
     fun executeRaw(rawCommand: String): String
+
+    /** Operations for Keenetic configuration. */
+    fun configuration(): ConfigurationApi
 
     /** Operations for Keenetic interfaces. */
     fun interfaces(): InterfaceApi

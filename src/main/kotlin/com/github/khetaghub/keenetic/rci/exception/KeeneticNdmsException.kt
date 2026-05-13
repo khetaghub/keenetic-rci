@@ -2,6 +2,7 @@ package com.github.khetaghub.keenetic.rci.exception
 
 import com.github.khetaghub.keenetic.rci.validator.NdmsError
 
+/** Raised when NDMS returns one or more execution errors for a requested operation. */
 class KeeneticNdmsException : KeeneticRciException {
 
     constructor(

@@ -11,7 +11,9 @@ Kotlin/Java SDK для взаимодействия с Keenetic NDMS RCI чер�
   - [HTTP](#http)
   - [SSH](#ssh)
   - [Сохранение конфигурации](#сохранение-конфигурации)
+  - [Fail-safe механизм](#fail-safe-механизм)
 - [Доступные API](#доступные-api)
+  - [Configuration API](#configuration-api)
   - [System API](#system-api)
   - [Interface API](#interface-api)
   - [Routing API](#routing-api)
@@ -75,7 +77,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.khetaghub:keenetic-rci:0.1.0")
+    implementation("com.github.khetaghub:keenetic-rci:<version>")
 }
 ```
 
@@ -97,7 +99,7 @@ dependencyResolutionManagement {
 
 ```groovy
 dependencies {
-    implementation 'com.github.khetaghub:keenetic-rci:0.1.0'
+    implementation 'com.github.khetaghub:keenetic-rci:<version>'
 }
 ```
 
@@ -118,14 +120,14 @@ dependencies {
     <dependency>
         <groupId>com.github.khetaghub</groupId>
         <artifactId>keenetic-rci</artifactId>
-        <version>0.1.0</version>
+        <version>&lt;version&gt;</version>
     </dependency>
 </dependencies>
 ```
 
 </details>
 
-Вместо `0.1.0` можно указать любой другой желаемый _tag_, _release_ или _commit hash_ из репозитория [khetaghub/keenetic-rci](https://github.com/khetaghub/keenetic-rci).
+Вместо `<version>` можно указать нужный _tag_, _release_ или _commit hash_ из репозитория [khetaghub/keenetic-rci](https://github.com/khetaghub/keenetic-rci).
 
 ## Использование
 
@@ -138,7 +140,7 @@ dependencies {
 import com.github.khetaghub.keenetic.rci.api.KeeneticApi
 import com.github.khetaghub.keenetic.rci.transport.HttpTransport
 
-val transport: KeeneticTransport = HttpTransport.builder()
+val transport = HttpTransport.builder()
     .baseUrl("192.168.1.1") // также можно указать доменное имя KeenDNS
     .credentials("admin", "password")
     .build()
@@ -180,7 +182,7 @@ Version version = api.system().version();
 import com.github.khetaghub.keenetic.rci.api.KeeneticApi
 import com.github.khetaghub.keenetic.rci.transport.SshTransport
 
-val transport: KeeneticTransport = SshTransport.builder()
+val transport = SshTransport.builder()
     .host("192.168.1.1")
     .credentials("admin", "password")
     .allowAnyHostKey()
@@ -220,10 +222,67 @@ Version version = api.system().version();
 NDMS разделяет **running-конфигурацию** и **startup-конфигурацию**. Если изменения должны пережить перезагрузку, нужно вызвать:
 
 ```kotlin
-api.system().configurationSave()
+api.configuration().save()
 ```
 
+Обычно это нужно после изменяющих операций, например:
+
+```kotlin
+api.routing().addDomainGroup(
+    DomainGroup(
+        name = "work",
+        description = "Рабочие домены",
+        addresses = listOf("example.org", "corp.example.com"),
+    )
+)
+api.configuration().save()
+```
+
+### Fail-safe механизм
+
+SDK поддерживает fail-safe сценарий Keenetic, когда устройство может автоматически откатить несохраненные изменения и перезагрузиться, если сессия не будет подтверждена:
+
+```kotlin
+api.configuration().failSafeTimer(60)
+
+// выполняем изменения...
+
+api.configuration().failSafeCommit()
+// или
+api.configuration().failSafeRollback()
+```
+
+`failSafeTimer(seconds)` настраивает или перенастраивает таймер с действием `reboot`. Это состояние сохраняется между перезагрузками и не требует отдельного `api.configuration().save()`.
+
+Доступные операции:
+
+- `failSafeTimer(seconds)` — настраивает или перенастраивает fail-safe таймер в диапазоне `60..86400` секунд.
+- `disableFailSafeTimer()` — отключает fail-safe таймер.
+- `failSafeKeepAlive()` — тихо перезапускает активный таймер; если fail-safe режим неактивен или изменений нет, устройство ничего не делает.
+- `failSafeCommit()` — фиксирует все несохраненные изменения и останавливает таймер.
+- `failSafeRollback()` — откатывает все несохраненные изменения и перезагружает устройство; если изменений нет, устройство ничего не делает.
+
+Отключение таймера тоже доступно через API:
+
+```kotlin
+api.configuration().disableFailSafeTimer()
+```
+
+Практическое замечание по текущим прошивкам:
+
+- Если fail-safe уже был активен, `failSafeTimer(60)` может вернуть не `Enabled a 60-second fail-safe "reboot" timer.`, а `Bumped up to 60 seconds.`.
+- Перед автоматизацией rollback полезно проверять `api.configuration().lastChange().failSafe`. Если `unsaved == false` и `timeLeft == 0`, устройство может проигнорировать `failSafeRollback()` с сообщением `Ignored a fail-safe rollback: no pending changes.`.
+- fail-safe начинает "видеть" изменения только после `system configuration save` / `copy running-config startup-config`.
+
 ## Доступные API
+
+Главный фасад SDK — `KeeneticApi`. Он делит доступ к устройству на несколько специализированных областей:
+
+- `executeRaw(...)` — низкоуровневый доступ, если типизированного метода еще нет.
+- `configuration()` — состояние и сохранение конфигурации.
+- `interfaces()` — список интерфейсов устройства.
+- `routing()` — FQDN-группы и DNS routing rules.
+- `system()` — системная информация, например версия прошивки.
 
 ### Raw API
 
@@ -237,14 +296,32 @@ api.system().configurationSave()
 Пример для `HttpTransport`:
 
 ```kotlin
-val response = api.executeRaw("""{"show":{"version":{}}}""")
+val response = api.executeRaw(
+    """
+    [
+      {
+        "show": {
+          "version": {}
+        }
+      }
+    ]
+    """.trimIndent()
+)
 ```
 
 <details>
 <summary>Java</summary>
 
 ```java
-String response = api.executeRaw("{\"show\":{\"version\":{}}}");
+String response = api.executeRaw("""
+    [
+      {
+        "show": {
+          "version": {}
+        }
+      }
+    ]
+    """);
 ```
 
 </details>
@@ -264,9 +341,24 @@ String response = api.executeRaw("show version");
 
 </details>
 
+### Configuration API
+
+`configuration()` — фасад для операций над конфигурацией Keenetic.
+
+| Метод | Что делает |
+| --- | --- |
+| `api.configuration().lastChange()` | Возвращает информацию о последнем изменении конфигурации (`LastChange`) |
+| `api.configuration().save()` | Сохраняет running-конфигурацию в startup-конфигурацию |
+| `api.configuration().failSafeTimer(seconds)` | Настраивает или перенастраивает fail-safe таймер с действием `reboot` |
+| `api.configuration().disableFailSafeTimer()` | Отключает fail-safe таймер |
+| `api.configuration().failSafeKeepAlive()` | Тихо перезапускает активный fail-safe таймер |
+| `api.configuration().failSafeCommit()` | Фиксирует несохраненные изменения и останавливает таймер |
+| `api.configuration().failSafeRollback()` | Откатывает несохраненные изменения и перезагружает устройство |
+
+
 ### Interface API
 
-`interfaces()` — фасад для управления интерфейсами.
+`interfaces()` — фасад для чтения интерфейсов, известных NDMS.
 
 | Метод | Что делает |
 | --- | --- |
@@ -274,12 +366,11 @@ String response = api.executeRaw("show version");
 
 ### System API
 
-`system()` — фасад для работы с системой и конфигурациями.
+`system()` — фасад для системной информации устройства.
 
 | Метод | Что делает |
 | --- | --- |
 | `api.system().version()` | Возвращает версию прошивки и данные платформы (`Version`) |
-| `api.system().configurationSave()` | Сохраняет running-конфигурацию в startup-конфигурацию |
 
 ### Routing API
 
@@ -287,9 +378,9 @@ String response = api.executeRaw("show version");
 
 | Метод | Что делает |
 | --- | --- |
-| `api.routing().getDomainGroupsList()` | Возвращает FQDN object-group (`List<DomainGroup>`) |
-| `api.routing().addDomainGroup(domainGroup)` | Создает или обновляет FQDN object-group с описанием и адресами |
-| `api.routing().deleteDomainGroup(domainGroupName)` | Удаляет FQDN object-group по имени |
-| `api.routing().getDomainGroupRoutingRulesList()` | Возвращает DNS proxy routes для групп доменов (`List<DomainGroupRoutingRule>`) |
-| `api.routing().addDomainGroupRoutingRule(rule)` | Добавляет DNS proxy route для группы доменов через выбранный интерфейс |
-| `api.routing().deleteDomainGroupRoutingRule(domainGroupName, interfaceName)` | Удаляет DNS proxy route по группе доменов и интерфейсу |
+| `api.routing().getDomainGroupsList()` | Возвращает список групп доменов (`List<DomainGroup>`) |
+| `api.routing().addDomainGroup(domainGroup)` | Создает или обновляет группу доменов с описанием и адресами |
+| `api.routing().deleteDomainGroup(domainGroupName)` | Удаляет группу доменов по имени |
+| `api.routing().getDomainGroupRoutingRulesList()` | Возвращает DNS routing rules (`List<DomainGroupRoutingRule>`) |
+| `api.routing().addDomainGroupRoutingRule(rule)` | Добавляет DNS routing rule для группы доменов через выбранный интерфейс |
+| `api.routing().deleteDomainGroupRoutingRule(domainGroupName, interfaceName)` | Удаляет DNS routing rule по группе доменов и интерфейсу |

@@ -60,8 +60,6 @@ class SshTransport private constructor(
             ssh.startSession().use { session ->
                 executeCommand(session, rawCommand)
             }
-        }.also { response ->
-            logger.debug { "command='$rawCommand' response=$response" }
         }
     }
 
@@ -108,7 +106,7 @@ class SshTransport private constructor(
             "CLI command timed out after $commandTimeoutMillis ms: $cliCommand"
         )
 
-        logger.debug { "command=${command.javaClass.simpleName} response=$std" }
+        logger.debug { "command='$cliCommand' response=$std" }
 
         if (exitStatus != 0) {
             throw KeeneticNdmsException(

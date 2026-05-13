@@ -27,6 +27,7 @@ class DefaultResponseParser @JvmOverloads constructor(
     private val parsers: Map<KClass<out RciCommand<*>>, Parser<*>> = listOf(
         GetDomainGroupRoutingRulesCommandParser(objectMapper),
         GetDomainGroupsCommandParser(objectMapper),
+        GetLastChangeCommandParser(objectMapper),
         GetInterfacesCommandParser(objectMapper),
         GetVersionCommandParser(objectMapper)
     ).associateByUniqueCommandClass()
