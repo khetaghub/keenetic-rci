@@ -18,7 +18,7 @@ interface ResponseParser {
 
 }
 
-class DefaultResponseParser(
+class DefaultResponseParser @JvmOverloads constructor(
     objectMapper: ObjectMapper = jacksonObjectMapper().apply {
         disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
     }

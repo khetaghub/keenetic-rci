@@ -45,6 +45,8 @@ interface KeeneticApi {
          * HTTP transport sends JSON RCI requests to `/rci/`, while SSH transport
          * executes equivalent CLI commands and parses their output.
          */
+        @JvmStatic
+        @JvmOverloads
         fun create(
             transport: KeeneticTransport,
             responseParser: ResponseParser = DefaultResponseParser(),

@@ -210,6 +210,7 @@ class SshTransport private constructor(
         private const val DEFAULT_CONNECT_TIMEOUT_MILLIS = 5_000
         private const val DEFAULT_COMMAND_TIMEOUT_MILLIS = 10_000L
 
+        @JvmStatic
         fun builder(): Builder = Builder()
     }
 }

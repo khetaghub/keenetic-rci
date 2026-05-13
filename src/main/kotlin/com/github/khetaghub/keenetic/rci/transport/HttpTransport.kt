@@ -198,6 +198,7 @@ class HttpTransport private constructor(
         private const val AUTH_PATH = "auth"
         private const val RCI_PATH = "rci"
 
+        @JvmStatic
         fun builder(): Builder = Builder()
 
         private val JSON_MEDIA_TYPE = "application/json".toMediaType()

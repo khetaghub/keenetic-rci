@@ -1,11 +1,12 @@
 # Keenetic RCI
 
-Kotlin SDK для взаимодействия с Keenetic NDMS RCI через HTTP или SSH.
+Kotlin/Java SDK для взаимодействия с Keenetic NDMS RCI через HTTP или SSH.
 
 ## Содержание
 
 - [Обзор](#обзор)
 - [Статус проекта](#статус-проекта)
+- [Подключение](#подключение)
 - [Использование](#использование)
   - [HTTP](#http)
   - [SSH](#ssh)
@@ -14,17 +15,18 @@ Kotlin SDK для взаимодействия с Keenetic NDMS RCI через H
   - [System API](#system-api)
   - [Interface API](#interface-api)
   - [Routing API](#routing-api)
+  - [Raw API](#raw-api)
 
 ## Обзор
 
-`keenetic-rci` — Kotlin-библиотека для программного взаимодействия с роутерами Keenetic через NDMS RCI.
+`keenetic-rci` — библиотека для программного взаимодействия с роутерами Keenetic через NDMS RCI.
 
 Keenetic управляется через NDMS (Network Device Management System). RCI — это слой доступа к внутренней модели NDMS, 
 через который работают CLI, Web UI, HTTP API, мобильное приложение и облако.
 
-`keenetic-rci` дает один Kotlin API поверх двух способов обращения к этой модели:
+`keenetic-rci` дает один API поверх двух способов обращения к этой модели:
 
-- `HTTP/RCI`: JSON-запросы в `/rci/`;
+- `HTTP/RCI`: JSON-запросы в `POST /rci/`;
 - `CLI/RCI (over SSH)`: текстовые NDMS-команды вроде `show version` и `show interface`.
 
 ```mermaid
@@ -49,6 +51,82 @@ graph TD
 
 Актуальный список поддерживаемых API описан в разделе [Доступные API](#доступные-api).
 
+> [!NOTE]
+> На данный момент библиотека протестирована на роутере **Keenetic Giga** с версией KeeneticOS **5.0.11**.
+
+## Подключение
+
+Подключить библиотеку можно напрямую из GitHub через [JitPack](https://jitpack.io/#khetaghub/keenetic-rci).
+
+Kotlin DSL
+
+`settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
+}
+```
+
+`build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.khetaghub:keenetic-rci:0.1.0")
+}
+```
+
+<details>
+<summary>Groovy DSL</summary>
+
+`settings.gradle`:
+
+```groovy
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+`build.gradle`:
+
+```groovy
+dependencies {
+    implementation 'com.github.khetaghub:keenetic-rci:0.1.0'
+}
+```
+
+</details>
+
+<details>
+<summary>Maven</summary>
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>com.github.khetaghub</groupId>
+        <artifactId>keenetic-rci</artifactId>
+        <version>0.1.0</version>
+    </dependency>
+</dependencies>
+```
+
+</details>
+
+Вместо `0.1.0` можно указать любой другой желаемый _tag_, _release_ или _commit hash_ из репозитория [khetaghub/keenetic-rci](https://github.com/khetaghub/keenetic-rci).
+
 ## Использование
 
 ### HTTP
@@ -69,6 +147,27 @@ val api = KeeneticApi.create(transport)
 
 val version = api.system().version()
 ```
+
+<details>
+<summary>Java</summary>
+
+```java
+import com.github.khetaghub.keenetic.rci.api.KeeneticApi;
+import com.github.khetaghub.keenetic.rci.api.KeeneticTransport;
+import com.github.khetaghub.keenetic.rci.api.Version;
+import com.github.khetaghub.keenetic.rci.transport.HttpTransport;
+
+KeeneticTransport transport = HttpTransport.builder()
+    .baseUrl("192.168.1.1") // также можно указать доменное имя KeenDNS
+    .credentials("admin", "password")
+    .build();
+
+KeeneticApi api = KeeneticApi.create(transport);
+
+Version version = api.system().version();
+```
+
+</details>
 
 `HttpTransport` авторизуется лениво при первом запросе и один раз повторяет авторизацию, если получает ответ `401`.
 
@@ -92,6 +191,28 @@ val api = KeeneticApi.create(transport)
 val version = api.system().version()
 ```
 
+<details>
+<summary>Java</summary>
+
+```java
+import com.github.khetaghub.keenetic.rci.api.KeeneticApi;
+import com.github.khetaghub.keenetic.rci.api.KeeneticTransport;
+import com.github.khetaghub.keenetic.rci.api.Version;
+import com.github.khetaghub.keenetic.rci.transport.SshTransport;
+
+KeeneticTransport transport = SshTransport.builder()
+    .host("192.168.1.1")
+    .credentials("admin", "password")
+    .allowAnyHostKey()
+    .build();
+
+KeeneticApi api = KeeneticApi.create(transport);
+
+Version version = api.system().version();
+```
+
+</details>
+
 Для production-использования лучше передавать `knownHostsFile(...)` или собственный `hostKeyVerifier(...)` вместо `allowAnyHostKey()`.
 
 ### Сохранение конфигурации
@@ -104,9 +225,29 @@ api.system().configurationSave()
 
 ## Доступные API
 
-Текущая публичная точка входа — `KeeneticApi.create(transport)`. Она открывает фасады `system()`, `interfaces()`, `routing()` и метод `executeRaw(rawCommand)`.
+### Raw API
 
-`executeRaw(rawCommand)` нужен для случаев, когда в SDK еще нет типизированного метода. Для `HttpTransport` он принимает готовое JSON-тело запроса `/rci/`, а для `SshTransport` — CLI-команду NDMS, например `show version`.
+Если в SDK еще нет типизированного метода, можно использовать `executeRaw(rawCommand)`.
+
+Поведение зависит от выбранного транспорта:
+
+- `HttpTransport`: ожидает готовое JSON-тело запроса для `POST /rci/`.
+- `SshTransport`: ожидает CLI-команду NDMS.
+
+Пример для `HttpTransport`:
+
+```kotlin
+val response = api.executeRaw("""{"show":{"version":{}}}""")
+```
+
+<details>
+<summary>Java</summary>
+
+```java
+String response = api.executeRaw("{\"show\":{\"version\":{}}}");
+```
+
+</details>
 
 Пример для `SshTransport`:
 
@@ -114,11 +255,14 @@ api.system().configurationSave()
 val response = api.executeRaw("show version")
 ```
 
-Пример для `HttpTransport`:
+<details>
+<summary>Java</summary>
 
-```kotlin
-val response = api.executeRaw("""{"show":{"version":{}}}""")
+```java
+String response = api.executeRaw("show version");
 ```
+
+</details>
 
 ### Interface API
 

@@ -19,7 +19,7 @@ interface ResponseValidator {
 
 }
 
-class DefaultResponseValidator(
+class DefaultResponseValidator @JvmOverloads constructor(
     private val objectMapper: ObjectMapper = jacksonObjectMapper(),
 ) : ResponseValidator {
 
