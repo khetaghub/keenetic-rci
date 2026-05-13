@@ -33,19 +33,7 @@ class SshTransport private constructor(
         val cliCommand = command as? CliCommand<*>
             ?: throw KeeneticRciTransportException("SSH transport supports only CLI commands")
 
-        return SSHClient().use { ssh ->
-            configureHostKeyVerification(ssh)
-
-            ssh.connectTimeout = connectTimeoutMillis
-            ssh.timeout = commandTimeoutMillis.toInt()
-
-            ssh.connect(host, port)
-            try {
-                ssh.authPassword(username, password)
-            } catch (e: net.schmizz.sshj.userauth.UserAuthException) {
-                throw KeeneticRciTransportAuthException("SSH transport authentication failed: ${e.message}", e)
-            }
-
+        return withAuthenticatedSsh { ssh ->
             when (val view = cliCommand.cliCommand) {
                 is CliCommandView.Single ->
                     ssh.startSession().use { session ->
@@ -66,6 +54,33 @@ class SshTransport private constructor(
             }
         }
     }
+
+    override fun execute(rawCommand: String): String {
+        return withAuthenticatedSsh { ssh ->
+            ssh.startSession().use { session ->
+                executeCommand(session, rawCommand)
+            }
+        }.also { response ->
+            logger.debug { "command='$rawCommand' response=$response" }
+        }
+    }
+
+    private inline fun <T> withAuthenticatedSsh(block: (SSHClient) -> T): T =
+        SSHClient().use { ssh ->
+            configureHostKeyVerification(ssh)
+
+            ssh.connectTimeout = connectTimeoutMillis
+            ssh.timeout = commandTimeoutMillis.toInt()
+
+            ssh.connect(host, port)
+            try {
+                ssh.authPassword(username, password)
+            } catch (e: net.schmizz.sshj.userauth.UserAuthException) {
+                throw KeeneticRciTransportAuthException("SSH transport authentication failed: ${e.message}", e)
+            }
+
+            block(ssh)
+        }
 
     private fun executeCommand(session: Session, cliCommand: String): String {
         val command = session.exec(cliCommand)

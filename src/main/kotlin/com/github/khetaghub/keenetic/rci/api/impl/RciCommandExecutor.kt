@@ -24,4 +24,9 @@ internal class RciCommandExecutor(
         responseValidator.validate(commandType, command, response)
     }
 
+    fun executeRaw(rawCommand: String): String {
+        val response = transport.execute(rawCommand)
+        return response
+    }
+
 }

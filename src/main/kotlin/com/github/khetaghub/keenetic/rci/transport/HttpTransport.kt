@@ -37,11 +37,40 @@ class HttpTransport private constructor(
     override fun execute(command: RciCommand<*>): String {
         val httpCommand = command as? HttpBatchCommand<*>
             ?: throw KeeneticRciTransportException("HttpTransport supports only HTTP commands")
+        val response = executeRequest(httpCommand.httpRequestBody)
+        logger.debug { "command=${command.javaClass.simpleName} response=$response" }
+        return response
+    }
+
+    override fun execute(rawCommand: String): String {
+        val response = executeRequest(rawCommand)
+        logger.debug { "command='$rawCommand' response=$response" }
+        return response
+    }
+
+    private fun executeRequest(requestBody: String, allowRetry: Boolean = true): String {
+        val request = buildPostRequest("$rciUrl/", requestBody)
 
         ensureAuthenticated()
 
-        val response = execute(buildPostRequest("$rciUrl/", httpCommand.httpRequestBody))
-        logger.debug { "command=${command.javaClass.simpleName} response=$response" }
+        val response: String = httpClient.newCall(request).execute().use { response ->
+            if (response.code == 401 && allowRetry) {
+                auth()
+                authenticated = true
+                return executeRequest(requestBody, allowRetry = false)
+            }
+
+            val body = response.body?.string().orEmpty()
+
+            if (!response.isSuccessful) {
+                throw KeeneticRciTransportException(
+                    "Request failed: HTTP ${response.code}, body=$body"
+                )
+            }
+
+            body
+        }
+
         return response
     }
 
@@ -97,26 +126,6 @@ class HttpTransport private constructor(
             builder.get().build()
         } else {
             builder.post(authPayload(passwordHash).toJsonBody()).build()
-        }
-    }
-
-    private fun execute(request: Request, allowRetry: Boolean = true): String {
-        httpClient.newCall(request).execute().use { response ->
-            if (response.code == 401 && allowRetry) {
-                auth()
-                authenticated = true
-                return execute(request, allowRetry = false)
-            }
-
-            val body = response.body?.string().orEmpty()
-
-            if (!response.isSuccessful) {
-                throw KeeneticRciTransportException(
-                    "Request failed: HTTP ${response.code}, body=$body"
-                )
-            }
-
-            return body
         }
     }
 

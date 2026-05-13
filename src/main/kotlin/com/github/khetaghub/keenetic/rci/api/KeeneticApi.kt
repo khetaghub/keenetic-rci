@@ -19,6 +19,16 @@ import com.github.khetaghub.keenetic.rci.validator.ResponseValidator
  */
 interface KeeneticApi {
 
+    /**
+     * Executes a transport-specific raw command and returns the unparsed device response.
+     *
+     * With [HttpTransport] the argument must be a ready-to-send JSON body for `/rci/`.
+     * With [SshTransport] the argument must be a raw NDMS CLI command such as `show version`.
+     *
+     * Use this method when the SDK does not yet provide a typed facade for the required operation.
+     */
+    fun executeRaw(rawCommand: String): String
+
     /** Operations for Keenetic interfaces. */
     fun interfaces(): InterfaceApi
 

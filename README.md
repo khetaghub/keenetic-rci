@@ -104,7 +104,21 @@ api.system().configurationSave()
 
 ## Доступные API
 
-Текущая публичная точка входа — `KeeneticApi.create(transport)`. Она открывает три фасада: `system()`, `interfaces()` и `routing()`.
+Текущая публичная точка входа — `KeeneticApi.create(transport)`. Она открывает фасады `system()`, `interfaces()`, `routing()` и метод `executeRaw(rawCommand)`.
+
+`executeRaw(rawCommand)` нужен для случаев, когда в SDK еще нет типизированного метода. Для `HttpTransport` он принимает готовое JSON-тело запроса `/rci/`, а для `SshTransport` — CLI-команду NDMS, например `show version`.
+
+Пример для `SshTransport`:
+
+```kotlin
+val response = api.executeRaw("show version")
+```
+
+Пример для `HttpTransport`:
+
+```kotlin
+val response = api.executeRaw("""{"show":{"version":{}}}""")
+```
 
 ### Interface API
 
@@ -135,4 +149,3 @@ api.system().configurationSave()
 | `api.routing().getDomainGroupRoutingRulesList()` | Возвращает DNS proxy routes для групп доменов (`List<DomainGroupRoutingRule>`) | `show.sc.dns-proxy.route` | `show running-config` |
 | `api.routing().addDomainGroupRoutingRule(rule)` | Добавляет DNS proxy route для группы доменов через выбранный интерфейс | `dns-proxy.route` | `dns-proxy route object-group ...` |
 | `api.routing().deleteDomainGroupRoutingRule(domainGroupName, interfaceName)` | Удаляет DNS proxy route по группе доменов и интерфейсу | `dns-proxy.route` с `no: true` | `no dns-proxy route object-group ...` |
-

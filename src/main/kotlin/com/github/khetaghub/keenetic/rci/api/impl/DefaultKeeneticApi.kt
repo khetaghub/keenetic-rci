@@ -6,15 +6,19 @@ import com.github.khetaghub.keenetic.rci.api.RoutingApi
 import com.github.khetaghub.keenetic.rci.api.SystemApi
 
 internal class DefaultKeeneticApi(
-    executor: RciCommandExecutor,
+    private val executor: RciCommandExecutor,
 ) : KeeneticApi {
 
     private val interfacesApi: InterfaceApi = DefaultInterfaceApi(executor)
     private val routingApi: RoutingApi = DefaultRoutingApi(executor)
     private val systemApi: SystemApi = DefaultSystemApi(executor)
 
+    override fun executeRaw(rawCommand: String): String = executor.executeRaw(rawCommand)
+
     override fun interfaces(): InterfaceApi = interfacesApi
+
     override fun routing(): RoutingApi = routingApi
+
     override fun system(): SystemApi = systemApi
 
 }
