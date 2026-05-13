@@ -6,7 +6,6 @@ import com.github.khetaghub.keenetic.rci.api.DomainGroupRoutingRule
 import com.github.khetaghub.keenetic.rci.command.GetDomainGroupRoutingRulesCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
-import kotlin.reflect.KClass
 
 class GetDomainGroupRoutingRulesCommandParser(
     private val objectMapper: ObjectMapper,

@@ -7,7 +7,6 @@ import com.github.khetaghub.keenetic.rci.command.GetDomainGroupsCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
-import kotlin.reflect.KClass
 
 class GetDomainGroupsCommandParser(
     private val objectMapper: ObjectMapper,

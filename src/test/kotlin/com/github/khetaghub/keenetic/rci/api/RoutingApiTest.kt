@@ -25,7 +25,7 @@ class RoutingApiTest {
                 runCatching { api.routing().deleteDomainGroup(name) }
             }
 
-            api.system().configurationSave()
+            api.configuration().save()
         }
 
         // Deleting a DomainGroup also deletes dependent DomainGroupRoutingRule entries.
@@ -78,12 +78,12 @@ class RoutingApiTest {
         val domainGroup = newDomainGroup()
 
         api.routing().addDomainGroup(domainGroup)
-        api.system().configurationSave()
+        api.configuration().save()
 
         assertThat(api.domainGroupNames()).contains(domainGroup.name)
 
         api.routing().deleteDomainGroup(domainGroup.name)
-        api.system().configurationSave()
+        api.configuration().save()
 
         assertThat(api.domainGroupNames()).doesNotContain(domainGroup.name)
     }
@@ -119,12 +119,12 @@ class RoutingApiTest {
 
         api.routing().addDomainGroup(domainGroup)
         api.routing().addDomainGroupRoutingRule(routingRule)
-        api.system().configurationSave()
+        api.configuration().save()
 
         assertThat(api.routingRuleKeys()).contains(routingRule.key)
 
         api.routing().deleteDomainGroupRoutingRule(domainGroup.name, routingRule.interfaceName)
-        api.system().configurationSave()
+        api.configuration().save()
 
         assertThat(api.routingRuleKeys()).doesNotContain(routingRule.key)
     }
