@@ -3,12 +3,17 @@ package com.github.khetaghub.keenetic.rci.validator
 import com.github.khetaghub.keenetic.rci.api.DomainGroup
 import com.github.khetaghub.keenetic.rci.api.DomainGroupRoutingRule
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
+import com.github.khetaghub.keenetic.rci.utils.DomainType
+import com.github.khetaghub.keenetic.rci.utils.DomainUtils
 
 internal object RoutingApiValidator {
 
     fun validateAddDomainGroup(domainGroup: DomainGroup) {
         requireNotBlank("name", domainGroup.name)
         requireNotBlank("description", domainGroup.description)
+
+        val addressesWithType: Map<String, DomainType> = domainGroup.addresses.associateWith { DomainUtils.detectType(it) }
+        TODO()
     }
 
     fun validateDeleteDomainGroup(domainGroupName: String) {

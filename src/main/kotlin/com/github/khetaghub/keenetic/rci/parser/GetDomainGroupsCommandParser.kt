@@ -7,6 +7,7 @@ import com.github.khetaghub.keenetic.rci.command.GetDomainGroupsCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommandType
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciException
+import com.github.khetaghub.keenetic.rci.utils.KeeneticUtils
 
 class GetDomainGroupsCommandParser(
     private val objectMapper: ObjectMapper,
@@ -101,6 +102,7 @@ class GetDomainGroupsCommandParser(
                         .removePrefix("description ")
                         .trim()
                         .removeSurrounding("\"")
+                        .let(KeeneticUtils::decodeEscapedHexToUtf8)
 
                     groups[groupName]?.description = description
                 }
