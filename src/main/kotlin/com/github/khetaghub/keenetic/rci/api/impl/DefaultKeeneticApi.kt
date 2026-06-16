@@ -10,6 +10,7 @@ internal class DefaultKeeneticApi(
     private val interfacesApi: InterfaceApi = DefaultInterfaceApi(executor)
     private val routingApi: RoutingApi = DefaultRoutingApi(executor)
     private val systemApi: SystemApi = DefaultSystemApi(executor)
+    private val wireguardApi: WireguardApi = DefaultWireguardApi(executor)
 
     override fun executeRaw(rawCommand: String): String = executor.executeRaw(rawCommand)
 
@@ -20,5 +21,7 @@ internal class DefaultKeeneticApi(
     override fun routing(): RoutingApi = routingApi
 
     override fun system(): SystemApi = systemApi
+
+    override fun wireguard(): WireguardApi = wireguardApi
 
 }

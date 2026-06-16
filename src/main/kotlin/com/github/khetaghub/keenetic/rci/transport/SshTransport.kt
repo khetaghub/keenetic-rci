@@ -12,7 +12,9 @@ import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.connection.channel.direct.Session
 import net.schmizz.sshj.transport.verification.HostKeyVerifier
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 class SshTransport private constructor(
@@ -50,6 +52,14 @@ class SshTransport private constructor(
                             executeCommand(session, commandLine)
                         }
                     }
+                }
+
+                is CliCommandView.Contextual -> {
+                    if (view.commands.isEmpty()) {
+                        throw KeeneticRciTransportException("CLI contextual must not be empty")
+                    }
+
+                    executeContextualCommands(ssh.startSession(), view.commands)
                 }
             }
         }
@@ -117,6 +127,70 @@ class SshTransport private constructor(
         }
 
         return std.trim()
+    }
+
+    private fun executeContextualCommands(session: Session, cliCommands: List<String>): String {
+        session.allocateDefaultPTY()
+
+        val shell = session.startShell()
+        val writer = shell.outputStream.bufferedWriter()
+        val response = StringBuilder()
+
+        response.append(readUntilIdle(shell.inputStream, "initial CLI prompt"))
+
+        cliCommands.forEach { commandLine ->
+            writer.append(commandLine)
+            writer.append('\r')
+            writer.flush()
+
+            val commandResponse = readUntilIdle(shell.inputStream, commandLine)
+            response.append(commandResponse)
+
+            if (NDMS_ERROR_PATTERN.containsMatchIn(commandResponse)) {
+                throw KeeneticNdmsException(
+                    message = buildString {
+                        appendLine("CLI contextual command failed")
+                        appendLine("command: $commandLine")
+                        appendLine(commandResponse.trim())
+                    }.trim()
+                )
+            }
+        }
+
+        val std = response.toString().trim()
+        logger.debug { "contextualCommands='${cliCommands.joinToString("\n")}' response=$std" }
+        return std
+    }
+
+    private fun readUntilIdle(input: InputStream, commandDescription: String): String {
+        val output = ByteArrayOutputStream()
+        val deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(commandTimeoutMillis)
+        var lastReadNanos = System.nanoTime()
+        var receivedData = false
+
+        while (System.nanoTime() < deadlineNanos) {
+            val available = input.available()
+            if (available > 0) {
+                val buffer = ByteArray(minOf(available, READ_BUFFER_SIZE))
+                val read = input.read(buffer)
+                if (read > 0) {
+                    output.write(buffer, 0, read)
+                    receivedData = true
+                    lastReadNanos = System.nanoTime()
+                }
+                continue
+            }
+
+            if (receivedData && System.nanoTime() - lastReadNanos >= CLI_OUTPUT_IDLE_NANOS) {
+                return output.toString(Charsets.UTF_8)
+            }
+
+            Thread.sleep(CLI_OUTPUT_POLL_MILLIS)
+        }
+
+        throw KeeneticRciTransportException(
+            "CLI contextual command timed out after $commandTimeoutMillis ms waiting for: $commandDescription"
+        )
     }
 
     private fun configureHostKeyVerification(ssh: SSHClient) {
@@ -207,6 +281,10 @@ class SshTransport private constructor(
         private const val DEFAULT_PORT = 22
         private const val DEFAULT_CONNECT_TIMEOUT_MILLIS = 5_000
         private const val DEFAULT_COMMAND_TIMEOUT_MILLIS = 10_000L
+        private const val CLI_OUTPUT_POLL_MILLIS = 10L
+        private const val READ_BUFFER_SIZE = 8_192
+        private val CLI_OUTPUT_IDLE_NANOS = TimeUnit.MILLISECONDS.toNanos(200)
+        private val NDMS_ERROR_PATTERN = Regex("""\berror\[\d+]""")
 
         @JvmStatic
         fun builder(): Builder = Builder()

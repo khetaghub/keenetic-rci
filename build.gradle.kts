@@ -15,6 +15,9 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.0")
     testImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.0")
 
+    // ini
+    implementation("org.ini4j:ini4j:0.5.4")
+
     // okhttp
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-urlconnection:4.12.0")

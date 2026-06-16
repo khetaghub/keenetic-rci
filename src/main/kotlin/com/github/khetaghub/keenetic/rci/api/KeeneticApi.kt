@@ -41,6 +41,9 @@ interface KeeneticApi {
     /** System-level operations. */
     fun system(): SystemApi
 
+    /** Operations for WireGuard peers and tunnels. */
+    fun wireguard(): WireguardApi
+
     companion object {
         /**
          * Creates an API facade for the selected transport.

@@ -58,7 +58,7 @@ class GetLastChangeCommandParser(
                 val key = line.substring(0, separatorIndex).trim()
                 val value = line.substring(separatorIndex + 1).trim()
 
-                // Только fail-safe является секцией
+                // Only fail-safe is represented as a section.
                 if (key == "fail-safe" && value.isEmpty()) {
                     currentSection = "fail-safe"
                     return@forEach

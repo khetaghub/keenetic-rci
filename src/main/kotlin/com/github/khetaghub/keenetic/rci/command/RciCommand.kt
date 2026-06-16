@@ -12,10 +12,11 @@ sealed interface HttpBatchCommand<T> : RciCommand<T> {
     val httpRequestBody: String
 }
 
-/** CLI representation can be a single command or several commands executed in order. */
+/** CLI representation can be a single command, independent commands, or commands sharing one CLI context. */
 sealed interface CliCommandView {
     data class Single(val command: String) : CliCommandView
     data class Sequential(val commands: List<String>) : CliCommandView
+    data class Contextual(val commands: List<String>) : CliCommandView
 }
 
 /** Command representation for NDMS CLI execution over SSH. */
