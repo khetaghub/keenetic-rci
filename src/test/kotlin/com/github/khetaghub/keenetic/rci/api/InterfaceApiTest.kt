@@ -9,15 +9,15 @@ class InterfaceApiTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("com.github.khetaghub.keenetic.rci.TestConfiguration#apis")
-    fun getInterfacesList_checkTransport(@Suppress("UNUSED_PARAMETER") transport: String, api: KeeneticApi) {
-        api.interfaces().getInterfacesList()
+    fun getList_checkTransport(@Suppress("UNUSED_PARAMETER") transport: String, api: KeeneticApi) {
+        api.interfaces().getList()
     }
 
     @Test
-    fun getInterfacesList_checkSameResponse() {
+    fun getList_checkSameResponse() {
         TestConfiguration.checkSame { api ->
             api.interfaces()
-                .getInterfacesList()
+                .getList()
                 .sortedBy { it.index }
         }
     }
