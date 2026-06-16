@@ -3,6 +3,7 @@ package com.github.khetaghub.keenetic.rci.transport
 import com.fasterxml.jackson.core.io.JsonStringEncoder
 import com.github.khetaghub.keenetic.rci.api.KeeneticTransport
 import com.github.khetaghub.keenetic.rci.command.HttpBatchCommand
+import com.github.khetaghub.keenetic.rci.command.HttpCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportAuthException
 import com.github.khetaghub.keenetic.rci.exception.KeeneticRciTransportException
@@ -35,20 +36,47 @@ class HttpTransport private constructor(
     private var authenticated = false
 
     override fun execute(command: RciCommand<*>): String {
-        val httpCommand = command as? HttpBatchCommand<*>
-            ?: throw KeeneticRciTransportException("HttpTransport supports only HTTP commands")
-        val response = executeRequest(httpCommand.httpRequestBody)
+        val response = when (command) {
+            is HttpCommand<*> -> executeRequest(command.httpRequestUrl)
+            is HttpBatchCommand<*> -> executeBatchRequest(command.httpRequestBody)
+        }
         logger.debug { "command=${command.javaClass.simpleName} response=$response" }
         return response
     }
 
     override fun execute(rawCommand: String): String {
-        val response = executeRequest(rawCommand)
+        val response = executeBatchRequest(rawCommand)
         logger.debug { "command='$rawCommand' response=$response" }
         return response
     }
 
-    private fun executeRequest(requestBody: String, allowRetry: Boolean = true): String {
+    private fun executeRequest(requestUrl: String, allowRetry: Boolean = true): String {
+        val request = buildGetRequest(rciUrl + requestUrl)
+
+        ensureAuthenticated()
+
+        val response: String = httpClient.newCall(request).execute().use { response ->
+            if (response.code == 401 && allowRetry) {
+                auth()
+                authenticated = true
+                return executeRequest(requestUrl, allowRetry = false)
+            }
+
+            val body = response.body?.string().orEmpty()
+
+            if (!response.isSuccessful) {
+                throw KeeneticRciTransportException(
+                    "Request failed: HTTP ${response.code}, body=$body"
+                )
+            }
+
+            body
+        }
+
+        return response
+    }
+
+    private fun executeBatchRequest(requestBody: String, allowRetry: Boolean = true): String {
         val request = buildPostRequest("$rciUrl/", requestBody)
 
         ensureAuthenticated()
@@ -57,7 +85,7 @@ class HttpTransport private constructor(
             if (response.code == 401 && allowRetry) {
                 auth()
                 authenticated = true
-                return executeRequest(requestBody, allowRetry = false)
+                return executeBatchRequest(requestBody, allowRetry = false)
             }
 
             val body = response.body?.string().orEmpty()
@@ -128,6 +156,12 @@ class HttpTransport private constructor(
             builder.post(authPayload(passwordHash).toJsonBody()).build()
         }
     }
+
+    private fun buildGetRequest(url: String): Request =
+        Request.Builder()
+            .url(url)
+            .get()
+            .build()
 
     private fun buildPostRequest(url: String, json: String): Request =
         Request.Builder()

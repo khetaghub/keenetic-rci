@@ -7,6 +7,11 @@ enum class RciCommandType {
 /** Marker for a typed SDK command. The type parameter is the parsed result type. */
 sealed interface RciCommand<T>
 
+/** Command representation for Keenetic HTTP RCI endpoints addressed by URL. */
+sealed interface HttpCommand<T> : RciCommand<T> {
+    val httpRequestUrl: String
+}
+
 /** Command representation for Keenetic HTTP RCI batch requests. */
 sealed interface HttpBatchCommand<T> : RciCommand<T> {
     val httpRequestBody: String

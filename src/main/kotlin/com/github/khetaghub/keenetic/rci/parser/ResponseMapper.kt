@@ -29,7 +29,10 @@ class DefaultResponseParser @JvmOverloads constructor(
         GetDomainGroupsCommandParser(objectMapper),
         GetLastChangeCommandParser(objectMapper),
         GetInterfacesCommandParser(objectMapper),
-        GetVersionCommandParser(objectMapper)
+        GetProviderDnsCommandParser(objectMapper),
+        GetVersionCommandParser(objectMapper),
+        GetPlainDnsCommandParser(objectMapper),
+        GetSecuredDnsCommandParser(objectMapper),
     ).associateByUniqueCommandClass()
 
     override fun <T> parse(
@@ -56,12 +59,14 @@ class DefaultResponseParser @JvmOverloads constructor(
         val result = linkedMapOf<KClass<out RciCommand<*>>, Parser<*>>()
 
         forEach { parser ->
-            val previous = result.put(parser.commandClass, parser)
+            parser.commandClasses.forEach { commandClass ->
+                val previous = result.put(commandClass, parser)
 
-            if (previous != null) {
-                throw KeeneticRciException(
-                    "There are multiple parsers registered for command=${parser.commandClass.qualifiedName}"
-                )
+                if (previous != null) {
+                    throw KeeneticRciException(
+                        "There are multiple parsers registered for command=${commandClass.qualifiedName}"
+                    )
+                }
             }
         }
 
@@ -73,6 +78,9 @@ class DefaultResponseParser @JvmOverloads constructor(
 sealed interface Parser<T> {
 
     val commandClass: KClass<out RciCommand<T>>
+
+    val commandClasses: Set<KClass<out RciCommand<T>>>
+        get() = setOf(commandClass)
 
     fun parseHttpResponse(commandType: RciCommandType, command: RciCommand<T>, response: String): T
 

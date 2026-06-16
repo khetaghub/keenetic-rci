@@ -4,10 +4,10 @@ keenetic-rci:
       enabled: true
       base-url: "192.168.1.1"
       username: "admin"
-      password: "pa$$word"
+      password: "password"
     ssh:
       enabled: true
       host: "192.168.1.1"
       port: 22
       username: "admin"
-      password: "pa$$word"
+      password: "password"

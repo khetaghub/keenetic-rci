@@ -21,6 +21,18 @@ interface WireguardApi {
     fun import(config: WireguardConfig, interfaceName: String, interfaceDescription: String? = null)
 
     /**
+     * Returns ASC parameters configured for WireGuard interfaces.
+     *
+     * The outer map key is the interface name, for example `Wireguard0`.
+     * The inner map contains ASC parameter names and values as reported by NDMS,
+     * for example `Jc`, `Jmin`, `Jmax`, `S1`, `S2`, and `H1`-`H4`.
+     *
+     * @return map where each key is a WireGuard interface name and each value is
+     * a map of ASC parameter names to their configured values.
+     */
+    fun getAscParams(): Map<String, Map<String, String>>
+
+    /**
      * Generates the next available WireGuard interface name.
      *
      * The name is based on existing interfaces matching the `WireguardN` pattern,

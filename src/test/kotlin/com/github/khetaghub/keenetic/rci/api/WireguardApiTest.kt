@@ -12,6 +12,7 @@ import io.mockk.runs
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.io.File
@@ -50,6 +51,12 @@ class WireguardApiTest {
 
         api.interfaces().delete(interfaceName)
         api.configuration().save()
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("com.github.khetaghub.keenetic.rci.TestConfiguration#apis")
+    fun getAscParams_checkTransport(@Suppress("UNUSED_PARAMETER") transport: String, api: KeeneticApi) {
+        assertDoesNotThrow { api.wireguard().getAscParams() }
     }
 
     @Test

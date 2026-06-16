@@ -44,6 +44,9 @@ interface KeeneticApi {
     /** Operations for WireGuard peers and tunnels. */
     fun wireguard(): WireguardApi
 
+    /** Operations for plain DNS and secured DNS resolvers. */
+    fun dns(): DnsApi
+
     companion object {
         /**
          * Creates an API facade for the selected transport.
