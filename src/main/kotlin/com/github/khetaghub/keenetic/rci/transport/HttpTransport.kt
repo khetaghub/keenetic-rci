@@ -2,6 +2,7 @@ package com.github.khetaghub.keenetic.rci.transport
 
 import com.fasterxml.jackson.core.io.JsonStringEncoder
 import com.github.khetaghub.keenetic.rci.api.KeeneticTransport
+import com.github.khetaghub.keenetic.rci.command.CliCommand
 import com.github.khetaghub.keenetic.rci.command.HttpBatchCommand
 import com.github.khetaghub.keenetic.rci.command.HttpCommand
 import com.github.khetaghub.keenetic.rci.command.RciCommand
@@ -39,6 +40,9 @@ class HttpTransport private constructor(
         val response = when (command) {
             is HttpCommand<*> -> executeRequest(command.httpRequestUrl)
             is HttpBatchCommand<*> -> executeBatchRequest(command.httpRequestBody)
+            is CliCommand<*> -> throw KeeneticRciTransportException(
+                "Command ${command.javaClass.simpleName} is not supported by HTTP transport"
+            )
         }
         logger.debug { "command=${command.javaClass.simpleName} response=$response" }
         return response

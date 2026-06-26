@@ -4,6 +4,7 @@ import com.github.khetaghub.keenetic.rci.api.WireguardConfig
 import com.github.khetaghub.keenetic.rci.utils.WireguardUtils
 import com.github.khetaghub.keenetic.rci.utils.escapeJson
 import com.github.khetaghub.keenetic.rci.utils.toCliString
+import com.github.khetaghub.keenetic.rci.utils.toCliToken
 import java.util.Base64
 
 class WireguardImportConfigCommand(
@@ -23,7 +24,7 @@ class WireguardImportConfigCommand(
                 "import": {
                   "import": "${escapeJson(encodedConfig)}",
                   "name": "",
-                  "filename": "${escapeJson(interfaceDescription ?: interfaceName )}"
+                  "filename": "${escapeJson(interfaceDescription ?: interfaceName)}"
                 }
               }
             }
@@ -31,89 +32,15 @@ class WireguardImportConfigCommand(
         ]
     """.trimIndent()
 
-    /**
-     * CLI command and context structure:
-     *
-     * root
-     * ├── interface {interfaceName}
-     * │   ├── description "{interfaceDescription}"
-     * │   ├── ip address {IPv4 address} {IPv4 mask}
-     * │   ├── ipv6 address {IPv6 address}/{prefix}
-     * │   ├── wireguard private-key {PrivateKey}
-     * │   ├── wireguard listen-port {ListenPort}
-     * │   ├── ip mtu {MTU}
-     * │   ├── wireguard asc {Jc Jmin Jmax S1 S2 H1 H2 H3 H4 [S3 S4 I1 I2 I3 I4 I5]}
-     * │   ├── wireguard peer {PublicKey}
-     * │   │   ├── preshared-key {PresharedKey}
-     * │   │   ├── allow-ips {AllowedIPs item}
-     * │   │   ├── endpoint {Endpoint}
-     * │   │   ├── keepalive-interval {PersistentKeepalive}
-     * │   │   └── exit
-     * │   └── exit
-     * └── ip name-server {DNS item} "" on {interfaceName}
-     *
-     * Mapping between CLI commands and WireGuard configuration fields:
-     *
-     * 1. `interface {interfaceName}`
-     *    The `.conf` file does not contain the interface name. It is passed as a separate constructor argument.
-     *
-     * 2. `description "{interfaceDescription}"`
-     *    The `.conf` file does not contain an interface description. This command is added only when
-     *    `interfaceDescription` is not blank.
-     *
-     * 3. `ip address {address} {mask}`
-     *    Source: `[Interface] Address`. Each IPv4 CIDR value becomes a separate command. For example,
-     *    `10.8.1.47/32` becomes `ip address 10.8.1.47 255.255.255.255`.
-     *
-     * 4. `ipv6 address {address}/{prefix}`
-     *    Source: `[Interface] Address`. Each IPv6 CIDR value becomes a separate command.
-     *
-     * 5. `wireguard private-key {key}`
-     *    Source: `[Interface] PrivateKey`.
-     *
-     * 6. `wireguard listen-port {port}`
-     *    Source: optional `[Interface] ListenPort` field.
-     *
-     * 7. `ip mtu {mtu}`
-     *    Source: optional `[Interface] MTU` field.
-     *
-     * 8. `wireguard asc {values}`
-     *    Source: `[Interface] Jc, Jmin, Jmax, S1, S2, H1, H2, H3, H4` and the optional extended block
-     *    `S3, S4, I1, I2, I3, I4, I5`. The CLI argument order is fixed:
-     *    `Jc Jmin Jmax S1 S2 H1 H2 H3 H4 [S3 S4 I1 I2 I3 I4 I5]`.
-     *    Empty `I1-I5` values are passed as `""` to preserve their positions.
-     *
-     * 9. `wireguard peer {publicKey}`
-     *    Source: `[Peer] PublicKey`. This command opens a context for a specific peer.
-     *
-     * 10. `preshared-key {key}`
-     *     Source: optional `[Peer] PresharedKey` field.
-     *
-     * 11. `allow-ips {network}`
-     *     Source: `[Peer] AllowedIPs`. Each list value becomes a separate command.
-     *
-     * 12. `endpoint {host:port}`
-     *     Source: optional `[Peer] Endpoint` field.
-     *
-     * 13. `keepalive-interval {seconds}`
-     *     Source: optional `[Peer] PersistentKeepalive` field.
-     *
-     * 14. `exit`
-     *     Service command that is not present in the `.conf` file. It closes the `wireguard peer` context.
-     *
-     * 15. `exit`
-     *     Service command that is not present in the `.conf` file. It closes the `interface {interfaceName}` context.
-     *
-     * 16. `ip name-server {dns} "" on {interfaceName}`
-     *     Source: `[Interface] DNS`. Each DNS server becomes a separate command in the root context.
-     *
-     * Commands 9-14 are repeated for each `[Peer]` section.
-     */
+    // SSH cannot use the same base64 import endpoint as HTTP, so it recreates
+    // the WireGuard interface through nested NDMS CLI contexts.
     override val cliCommand = CliCommandView.Contextual(
         buildList {
             val interfaceConfig = config.interfaceConfig
 
-            add("interface $interfaceName")
+            val interfaceToken = interfaceName.toCliToken()
+
+            add("interface $interfaceToken")
             interfaceDescription
                 ?.takeIf(String::isNotBlank)
                 ?.let { add("description ${it.toCliString()}") }
@@ -121,16 +48,16 @@ class WireguardImportConfigCommand(
             interfaceConfig.addresses.forEach { address ->
                 add(address.toAddressCommand())
             }
-            add("wireguard private-key ${interfaceConfig.privateKey}")
+            add("wireguard private-key ${interfaceConfig.privateKey.toCliToken()}")
             interfaceConfig.listenPort?.let { add("wireguard listen-port $it") }
             interfaceConfig.mtu?.let { add("ip mtu $it") }
             interfaceConfig.asc.toAscCommandOrNull()?.let(::add)
 
             config.peers.forEach { peer ->
-                add("wireguard peer ${peer.publicKey}")
-                peer.presharedKey?.let { add("preshared-key $it") }
-                peer.allowedIps.forEach { add("allow-ips $it") }
-                peer.endpoint?.let { add("endpoint $it") }
+                add("wireguard peer ${peer.publicKey.toCliToken()}")
+                peer.presharedKey?.let { add("preshared-key ${it.toCliToken()}") }
+                peer.allowedIps.forEach { add("allow-ips ${it.toCliToken()}") }
+                peer.endpoint?.let { add("endpoint ${it.toCliToken()}") }
                 peer.persistentKeepalive?.let { add("keepalive-interval $it") }
                 add("exit")
             }
@@ -179,12 +106,18 @@ class WireguardImportConfigCommand(
                 ?: return@map null
         }
         if (extendedValues.any { it != null }) {
-            values += extendedValues.map { value ->
-                value?.takeIf(String::isNotEmpty) ?: "\"\""
-            }
+            values += extendedValues.map { it.orEmpty() }
         }
 
-        return "wireguard asc ${values.joinToString(" ")}"
+        return "wireguard asc ${values.joinToString(" ") { it.toAscCliValue() }}"
+    }
+
+    private fun String.toAscCliValue(): String {
+        return when {
+            isEmpty() -> "\"\""
+            any(Char::isWhitespace) -> toCliString()
+            else -> toCliToken()
+        }
     }
 
     companion object {

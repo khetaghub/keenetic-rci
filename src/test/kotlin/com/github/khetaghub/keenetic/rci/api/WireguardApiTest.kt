@@ -74,7 +74,7 @@ class WireguardApiTest {
     @Test
     fun generateNextInterfaceName_haveInterfaces() {
         val interfaceMocks = List(5) { index ->
-            mockk<Interface> {
+            mockk<BaseInterface> {
                 every { name } returns "Wireguard${index.inc() * 2}"
             }
         }
